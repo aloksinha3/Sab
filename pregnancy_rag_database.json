@@ -1,0 +1,63 @@
+[
+  {
+    "topic": "first_trimester",
+    "content": "During the first trimester (weeks 1-12), focus on taking prenatal vitamins, especially folic acid (400-800 mcg daily), and managing morning sickness. Avoid alcohol, smoking, and certain medications. Schedule your first prenatal appointment between weeks 8-12. Common symptoms include nausea, fatigue, breast tenderness, and frequent urination. Contact your healthcare provider immediately if you experience severe abdominal pain, heavy bleeding, or persistent vomiting.",
+    "keywords": ["first trimester", "prenatal vitamins", "folic acid", "morning sickness", "early pregnancy", "first appointment"]
+  },
+  {
+    "topic": "second_trimester",
+    "content": "The second trimester (weeks 13-27) is often the most comfortable period of pregnancy. Continue prenatal care, maintain a balanced diet rich in iron and calcium, and stay active with doctor-approved exercise. You may start feeling your baby move (quickening) around weeks 18-22. The anatomy scan typically occurs around week 20. Most morning sickness subsides, and energy levels typically improve. Continue taking prenatal vitamins and attend regular prenatal appointments.",
+    "keywords": ["second trimester", "prenatal care", "diet", "exercise", "baby movement", "quickening", "anatomy scan", "energy levels"]
+  },
+  {
+    "topic": "third_trimester",
+    "content": "In the third trimester (weeks 28-40), monitor for signs of labor, continue regular prenatal visits (every 2 weeks until 36 weeks, then weekly), and prepare for delivery. Watch for symptoms like severe headaches, vision changes, decreased fetal movement, or signs of preterm labor. Practice breathing exercises and prepare your birth plan. Pack your hospital bag around week 36. Contact your healthcare provider immediately if you experience regular contractions before 37 weeks, water breaking, or decreased fetal movement.",
+    "keywords": ["third trimester", "labor", "delivery", "prenatal visits", "fetal movement", "preterm labor", "hospital bag", "birth plan"]
+  },
+  {
+    "topic": "high_risk_pregnancy",
+    "content": "High-risk pregnancies require close monitoring and specialized care. Risk factors include advanced maternal age (35+), diabetes (gestational or pre-existing), hypertension, multiple pregnancies, previous pregnancy complications, or certain medical conditions. Follow your healthcare provider's recommendations closely, attend all scheduled appointments, monitor symptoms daily, and don't hesitate to contact your medical team with concerns. High-risk pregnancies may require more frequent ultrasounds, specialized testing, or consultation with maternal-fetal medicine specialists.",
+    "keywords": ["high risk", "diabetes", "hypertension", "monitoring", "complications", "advanced maternal age", "multiple pregnancies", "maternal-fetal medicine"]
+  },
+  {
+    "topic": "medications",
+    "content": "Always consult your healthcare provider before taking any medications during pregnancy, including over-the-counter drugs and supplements. Some medications are safe during pregnancy, while others can harm the developing baby. Never stop taking prescribed medications without medical supervision. Common safe medications include acetaminophen (for pain/fever), certain antacids, and most prenatal vitamins. Avoid NSAIDs (ibuprofen, aspirin) especially in the third trimester, and certain antibiotics. Your healthcare provider will guide you on medication safety specific to your pregnancy.",
+    "keywords": ["medications", "prescription", "safe medications", "consult doctor", "over-the-counter", "acetaminophen", "NSAIDs", "antibiotics"]
+  },
+  {
+    "topic": "nutrition",
+    "content": "A balanced diet during pregnancy should include fruits, vegetables, whole grains, lean proteins, and dairy products. Aim for 300-500 extra calories per day in the second and third trimesters. Key nutrients include folic acid, iron, calcium, and protein. Avoid raw fish, unpasteurized dairy, deli meats (unless heated), excessive caffeine (limit to 200mg/day), and alcohol. Stay hydrated by drinking 8-10 glasses of water daily. Take prenatal vitamins as prescribed by your healthcare provider.",
+    "keywords": ["nutrition", "diet", "prenatal vitamins", "hydration", "food safety", "folic acid", "iron", "calcium", "protein", "caffeine"]
+  },
+  {
+    "topic": "exercise",
+    "content": "Regular exercise during pregnancy is beneficial for both mother and baby, but should be approved by your healthcare provider. Low-impact activities like walking, swimming, prenatal yoga, and stationary cycling are generally safe. Aim for 30 minutes of moderate exercise most days of the week. Avoid contact sports, activities with a high risk of falling, scuba diving, and exercises that involve lying flat on your back (especially after the first trimester). Stop exercising and contact your healthcare provider if you experience dizziness, chest pain, or vaginal bleeding.",
+    "keywords": ["exercise", "walking", "swimming", "yoga", "physical activity", "prenatal yoga", "low-impact", "safety"]
+  },
+  {
+    "topic": "warning_signs",
+    "content": "Seek immediate medical attention for: severe abdominal pain or cramping, vaginal bleeding (especially heavy bleeding), severe headaches that don't improve with rest, vision changes (blurred vision, spots, flashes), decreased or absent fetal movement (after 28 weeks), persistent nausea and vomiting, signs of preterm labor (regular contractions before 37 weeks, water breaking), severe swelling of face/hands, high fever (101°F or higher), or difficulty breathing. These symptoms may indicate serious complications requiring immediate medical evaluation.",
+    "keywords": ["warning signs", "emergency", "abdominal pain", "bleeding", "headaches", "vision changes", "fetal movement", "preterm labor", "swelling", "fever"]
+  },
+  {
+    "topic": "prenatal_appointments",
+    "content": "Regular prenatal appointments are essential for monitoring your health and your baby's development. Typical schedule: monthly visits until 28 weeks, every 2 weeks from 28-36 weeks, then weekly until delivery. During appointments, your healthcare provider will check your blood pressure, weight, baby's heart rate, measure your belly, and discuss any concerns. Important appointments include the first visit (8-12 weeks), anatomy scan (18-22 weeks), glucose screening (24-28 weeks), and Group B Strep test (36-37 weeks). Bring a list of questions to each appointment.",
+    "keywords": ["prenatal appointments", "prenatal visits", "schedule", "blood pressure", "ultrasound", "anatomy scan", "glucose screening", "Group B Strep"]
+  },
+  {
+    "topic": "common_symptoms",
+    "content": "Common pregnancy symptoms vary by trimester. First trimester: nausea, fatigue, breast tenderness, frequent urination, food aversions. Second trimester: increased energy, baby movement, heartburn, round ligament pain, skin changes. Third trimester: shortness of breath, difficulty sleeping, frequent urination, Braxton Hicks contractions, back pain. Most symptoms are normal, but contact your healthcare provider if symptoms are severe, persistent, or concerning. Keep a symptom journal to discuss with your healthcare provider at appointments.",
+    "keywords": ["symptoms", "nausea", "fatigue", "heartburn", "back pain", "Braxton Hicks", "frequent urination", "baby movement", "round ligament pain"]
+  },
+  {
+    "topic": "mental_health",
+    "content": "Mental health during pregnancy is just as important as physical health. Hormonal changes, stress, and life adjustments can affect mood. Common concerns include anxiety, mood swings, and pregnancy-related depression. Practice self-care, maintain social connections, get adequate sleep, and don't hesitate to seek support. Contact your healthcare provider if you experience persistent sadness, anxiety, thoughts of harming yourself or your baby, or difficulty functioning. Treatment options including therapy and safe medications are available. Your mental health matters.",
+    "keywords": ["mental health", "anxiety", "depression", "mood", "stress", "self-care", "support", "therapy", "pregnancy depression"]
+  },
+  {
+    "topic": "labor_preparation",
+    "content": "Prepare for labor and delivery by attending childbirth classes, creating a birth plan, packing your hospital bag (around week 36), and learning about labor signs. Signs of labor include regular contractions that increase in frequency and intensity, water breaking (amniotic fluid leakage), bloody show (mucus plug), and lower back pain. Know when to go to the hospital: contractions 5 minutes apart for an hour (first-time moms) or regular contractions (experienced moms), water breaking, or any concerns. Practice relaxation techniques and breathing exercises. Discuss pain management options with your healthcare provider.",
+    "keywords": ["labor", "delivery", "preparation", "birth plan", "hospital bag", "contractions", "water breaking", "childbirth classes", "pain management"]
+  }
+]
+

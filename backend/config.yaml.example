@@ -1,0 +1,13 @@
+twilio:
+  account_sid: "YOUR_TWILIO_ACCOUNT_SID"
+  auth_token: "YOUR_TWILIO_AUTH_TOKEN"
+  from_number: "YOUR_TWILIO_PHONE_NUMBER"
+
+database:
+  path: "patients.db"
+
+ai:
+  model_name: "google/gemma-2b-it"
+  use_cpu: true
+  max_length: 512
+

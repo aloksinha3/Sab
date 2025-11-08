@@ -1,0 +1,16 @@
+# AI/ML dependencies for SabCare
+# Install these separately if you want to use the AI features
+# pip install -r requirements-ai.txt
+
+# PyTorch (choose based on your system)
+# For CPU only:
+# torch>=2.6.0 --index-url https://download.pytorch.org/whl/cpu
+# For CUDA (GPU):
+# torch>=2.6.0
+
+# For now, let's use the latest available version
+torch>=2.6.0
+transformers>=4.35.2
+sentence-transformers>=2.2.2
+numpy>=1.24.3
+

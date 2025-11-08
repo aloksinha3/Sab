@@ -1,0 +1,94 @@
+{
+  "topics": {
+    "weekly_checkin": {
+      "description": "Weekly pregnancy check-in messages",
+      "examples": [
+        "Hello [NAME], this is your week [WEEKS] pregnancy check-in. How are you feeling today?",
+        "Good morning [NAME], this is your weekly pregnancy update for week [WEEKS].",
+        "Hi [NAME], we're checking in on your pregnancy progress at [WEEKS] weeks."
+      ],
+      "guidelines": {
+        "first_trimester": "Focus on morning sickness management, prenatal vitamins, and early pregnancy symptoms.",
+        "second_trimester": "Discuss baby movement, energy levels, and mid-pregnancy milestones.",
+        "third_trimester": "Monitor for signs of labor, preparation for delivery, and final trimester symptoms."
+      }
+    },
+    "medication_reminder": {
+      "description": "Medication reminder messages",
+      "examples": [
+        "Hello [NAME], this is your reminder to take your medications: [MEDICATIONS].",
+        "Good morning [NAME], please remember to take [MEDICATIONS] as prescribed.",
+        "Hi [NAME], don't forget your medication: [MEDICATIONS]."
+      ],
+      "guidelines": {
+        "timing": "Send reminders at appropriate times based on medication schedule.",
+        "dosage": "Always include specific dosage information when available.",
+        "importance": "Emphasize the importance of consistent medication adherence during pregnancy."
+      }
+    },
+    "appointment_notification": {
+      "description": "Appointment notification messages",
+      "examples": [
+        "Hello [NAME], this is a reminder about your upcoming prenatal appointment on [DATE].",
+        "Hi [NAME], don't forget your appointment with [PROVIDER] on [DATE].",
+        "Good morning [NAME], you have a prenatal visit scheduled for [DATE]."
+      ],
+      "guidelines": {
+        "timing": "Send reminders 24-48 hours before appointment.",
+        "preparation": "Include preparation instructions if applicable.",
+        "location": "Mention location or virtual appointment details."
+      }
+    },
+    "high_risk_monitoring": {
+      "description": "High-risk pregnancy monitoring messages",
+      "examples": [
+        "Hello [NAME], this is your high-risk pregnancy monitoring call.",
+        "Hi [NAME], we're checking in on your high-risk pregnancy status.",
+        "Good morning [NAME], this is your enhanced monitoring call for your high-risk pregnancy."
+      ],
+      "guidelines": {
+        "frequency": "More frequent calls for high-risk patients.",
+        "symptoms": "Emphasize importance of reporting symptoms immediately.",
+        "support": "Provide reassurance and support while maintaining medical vigilance."
+      }
+    }
+  },
+  "risk_categories": {
+    "low": {
+      "description": "Low-risk pregnancy messaging",
+      "call_frequency": "Weekly",
+      "tone": "Supportive and informative",
+      "focus": "General pregnancy wellness and routine care"
+    },
+    "medium": {
+      "description": "Medium-risk pregnancy messaging",
+      "call_frequency": "Twice weekly",
+      "tone": "Cautious and monitoring",
+      "focus": "Specific risk factors and enhanced monitoring"
+    },
+    "high": {
+      "description": "High-risk pregnancy messaging",
+      "call_frequency": "Daily or every other day",
+      "tone": "Vigilant and supportive",
+      "focus": "Close monitoring, symptom tracking, and immediate medical attention when needed"
+    }
+  },
+  "gestational_age_guidelines": {
+    "first_trimester": {
+      "weeks": "1-12",
+      "key_topics": ["Morning sickness", "Prenatal vitamins", "Early pregnancy symptoms", "First prenatal visit"],
+      "concerns": ["Bleeding", "Severe nausea", "Fever"]
+    },
+    "second_trimester": {
+      "weeks": "13-27",
+      "key_topics": ["Baby movement", "Energy levels", "Anatomy scan", "Nutrition"],
+      "concerns": ["Decreased movement", "Severe headaches", "Vision changes"]
+    },
+    "third_trimester": {
+      "weeks": "28-40",
+      "key_topics": ["Labor signs", "Delivery preparation", "Final appointments", "Postpartum planning"],
+      "concerns": ["Preterm labor", "Decreased movement", "Severe swelling", "High blood pressure"]
+    }
+  }
+}
+
