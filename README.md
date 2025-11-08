@@ -1,0 +1,2 @@
+# Mada
+Duke Hack AI
