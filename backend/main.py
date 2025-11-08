@@ -175,7 +175,7 @@ async def get_patient(patient_id: int):
             if meds and isinstance(meds, list):
                 # Convert old string format to new format if needed
                 if len(meds) > 0 and isinstance(meds[0], str):
-                    patient['medications'] = [{"name": m, "dosage": "", "frequency": ""} for m in meds]
+                    patient['medications'] = [{"name": m, "dosage": "", "frequency": [], "time": ""} for m in meds]
                 else:
                     patient['medications'] = meds
             else:
