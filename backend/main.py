@@ -36,7 +36,8 @@ twilio_service = TwilioService()
 class Medication(BaseModel):
     name: str
     dosage: str = ""
-    frequency: str = ""
+    frequency: List[str] = []  # Array of days: ["Sun", "Mon", "Tue", etc.]
+    time: str = ""  # Time in HH:MM format (24-hour)
 
 class PatientCreate(BaseModel):
     name: str
@@ -88,14 +89,38 @@ async def get_all_patients():
                 meds = json.loads(patient['medications'])
                 # Ensure medications are in the correct format
                 if meds and isinstance(meds, list):
-                    # Convert old string format to new format if needed
-                    if len(meds) > 0 and isinstance(meds[0], str):
-                        patient['medications'] = [{"name": m, "dosage": "", "frequency": ""} for m in meds]
-                    else:
-                        patient['medications'] = meds
+                    # Convert old formats to new format
+                    converted_meds = []
+                    for m in meds:
+                        if isinstance(m, str):
+                            # Old format: just string
+                            converted_meds.append({"name": m, "dosage": "", "frequency": [], "time": ""})
+                        elif isinstance(m, dict):
+                            # Check if frequency is string (old) or array (new)
+                            freq = m.get("frequency", [])
+                            if isinstance(freq, str):
+                                # Old format: string frequency
+                                converted_meds.append({
+                                    "name": m.get("name", ""),
+                                    "dosage": m.get("dosage", ""),
+                                    "frequency": [freq] if freq else [],
+                                    "time": m.get("time", "")
+                                })
+                            else:
+                                # New format: array frequency
+                                converted_meds.append({
+                                    "name": m.get("name", ""),
+                                    "dosage": m.get("dosage", ""),
+                                    "frequency": freq if isinstance(freq, list) else [],
+                                    "time": m.get("time", "")
+                                })
+                        else:
+                            converted_meds.append({"name": str(m), "dosage": "", "frequency": [], "time": ""})
+                    patient['medications'] = converted_meds
                 else:
                     patient['medications'] = []
-            except:
+            except Exception as e:
+                print(f"Error parsing medications: {e}")
                 patient['medications'] = []
         if patient.get('call_schedule'):
             try:
@@ -188,10 +213,22 @@ async def update_patient(patient_id: int, patient_update: PatientUpdate):
             meds = json.loads(patient.get('medications', '[]'))
             # Convert medication dicts to Medication objects if needed
             if meds and isinstance(meds, list) and len(meds) > 0:
-                if isinstance(meds[0], dict):
-                    meds = [Medication(**m) for m in meds]
-                elif isinstance(meds[0], str):
-                    meds = [Medication(name=m, dosage="", frequency="") for m in meds]
+                converted_meds = []
+                for m in meds:
+                    if isinstance(m, dict):
+                        # Ensure frequency is array and time exists
+                        freq = m.get("frequency", [])
+                        if isinstance(freq, str):
+                            freq = [freq] if freq else []
+                        converted_meds.append(Medication(
+                            name=m.get("name", ""),
+                            dosage=m.get("dosage", ""),
+                            frequency=freq if isinstance(freq, list) else [],
+                            time=m.get("time", "")
+                        ))
+                    elif isinstance(m, str):
+                        converted_meds.append(Medication(name=m, dosage="", frequency=[], time=""))
+                meds = converted_meds
             
             patient_data = PatientCreate(
                 name=patient['name'],
@@ -430,7 +467,7 @@ def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]
             scheduled_time=call_time
         )
     
-    # Generate medication reminders
+    # Generate medication reminders based on days and times
     if patient.medications:
         # Convert medications to list of strings for message generation
         med_strings = []
@@ -439,46 +476,92 @@ def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]
                 med_str = med.get("name", "")
                 if med.get("dosage"):
                     med_str += f" {med.get('dosage')}"
-                if med.get("frequency"):
-                    med_str += f" ({med.get('frequency')})"
+                frequency = med.get("frequency", [])
+                if frequency:
+                    if isinstance(frequency, list):
+                        med_str += f" ({', '.join(frequency)})"
+                    else:
+                        med_str += f" ({frequency})"
                 med_strings.append(med_str)
             elif isinstance(med, Medication):
                 med_str = med.name
                 if med.dosage:
                     med_str += f" {med.dosage}"
                 if med.frequency:
-                    med_str += f" ({med.frequency})"
+                    if isinstance(med.frequency, list):
+                        med_str += f" ({', '.join(med.frequency)})"
+                    else:
+                        med_str += f" ({med.frequency})"
                 med_strings.append(med_str)
             else:
                 med_strings.append(str(med))
         
-        for week in range(min(weeks_remaining, 20)):
-            for day_offset in [0, 3]:  # Twice per week
-                call_time = current_time + timedelta(days=week * call_frequency_days + day_offset)
-                
-                message = gemma_ai.generate_personalized_ivr_message(
-                    topic="medication_reminder",
-                    patient_name=patient.name,
-                    gestational_age_weeks=gestational_age + week,
-                    risk_factors=patient.risk_factors,
-                    risk_category=patient.risk_category,
-                    medications=med_strings
-                )
-                
-                schedule.append({
-                    "call_type": "medication_reminder",
-                    "scheduled_time": call_time.isoformat(),
-                    "message_text": message,
-                    "status": "scheduled"
-                })
-                
-                db.create_call_log(
-                    patient_id=patient_id,
-                    call_type="medication_reminder",
-                    status="scheduled",
-                    message_text=message,
-                    scheduled_time=call_time
-                )
+        # Generate calls for each medication based on days and times
+        from datetime import datetime, time as dt_time
+        day_map = {'Sun': 6, 'Mon': 0, 'Tue': 1, 'Wed': 2, 'Thu': 3, 'Fri': 4, 'Sat': 5}
+        
+        for med in patient.medications:
+            med_dict = med.dict() if isinstance(med, Medication) else med
+            med_name = med_dict.get("name", "")
+            med_dosage = med_dict.get("dosage", "")
+            med_days = med_dict.get("frequency", [])
+            med_time = med_dict.get("time", "09:00")  # Default to 9 AM if no time specified
+            
+            if not med_days or len(med_days) == 0:
+                continue
+            
+            # Parse time
+            try:
+                if isinstance(med_time, str) and ':' in med_time:
+                    hour, minute = map(int, med_time.split(':'))
+                else:
+                    hour, minute = 9, 0
+            except:
+                hour, minute = 9, 0
+            
+            # Generate calls for the next 20 weeks
+            for week in range(min(weeks_remaining, 20)):
+                for day_name in med_days:
+                    if day_name not in day_map:
+                        continue
+                    
+                    # Calculate the next occurrence of this day
+                    day_of_week = day_map[day_name]
+                    days_ahead = day_of_week - current_time.weekday()
+                    if days_ahead <= 0:  # Target day already happened this week
+                        days_ahead += 7
+                    
+                    # Add weeks offset
+                    days_ahead += week * 7
+                    
+                    call_date = current_time + timedelta(days=days_ahead)
+                    call_time = call_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    
+                    # Only schedule if it's in the future
+                    if call_time > current_time:
+                        message = gemma_ai.generate_personalized_ivr_message(
+                            topic="medication_reminder",
+                            patient_name=patient.name,
+                            gestational_age_weeks=gestational_age + week,
+                            risk_factors=patient.risk_factors,
+                            risk_category=patient.risk_category,
+                            medications=[f"{med_name} {med_dosage}".strip()]
+                        )
+                        
+                        schedule.append({
+                            "call_type": "medication_reminder",
+                            "scheduled_time": call_time.isoformat(),
+                            "message_text": message,
+                            "status": "scheduled"
+                        })
+                        
+                        db.create_call_log(
+                            patient_id=patient_id,
+                            call_type="medication_reminder",
+                            status="scheduled",
+                            message_text=message,
+                            scheduled_time=call_time
+                        )
     
     # High-risk monitoring calls
     if patient.risk_category == "high":

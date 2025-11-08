@@ -57,7 +57,7 @@ class Database:
                             cursor.execute("SELECT id, medications FROM patients WHERE medications IS NOT NULL AND medications != '[]'")
                             for patient_row in cursor.fetchall():
                                 old_meds = json.loads(patient_row[1])
-                                new_meds = [{"name": med, "dosage": "", "frequency": ""} for med in old_meds if isinstance(med, str)]
+                                new_meds = [{"name": med, "dosage": "", "frequency": [], "time": ""} for med in old_meds if isinstance(med, str)]
                                 cursor.execute("UPDATE patients SET medications = ? WHERE id = ?", 
                                              (json.dumps(new_meds), patient_row[0]))
                 except:

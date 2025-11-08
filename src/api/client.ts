@@ -12,7 +12,8 @@ const apiClient = axios.create({
 export interface Medication {
   name: string
   dosage: string
-  frequency: string
+  frequency: string[] // Array of days: ["Sun", "Mon", "Tue", etc.]
+  time: string // Time in HH:MM format (24-hour)
 }
 
 export interface Patient {

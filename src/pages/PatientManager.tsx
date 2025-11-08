@@ -17,6 +17,8 @@ export default function PatientManager() {
   })
   const [riskFactorsInput, setRiskFactorsInput] = useState('')
   const [medicationInputs, setMedicationInputs] = useState<Medication[]>([])
+  
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   useEffect(() => {
     loadPatients()
@@ -39,8 +41,15 @@ export default function PatientManager() {
       // Convert risk factors input to array
       const riskFactors = riskFactorsInput.split(',').map(s => s.trim()).filter(s => s)
       
-      // Use medication inputs
-      const medications = medicationInputs.filter(med => med.name.trim() !== '')
+      // Filter and validate medications
+      const medications = medicationInputs
+        .filter(med => med.name.trim() !== '')
+        .map(med => ({
+          name: med.name.trim(),
+          dosage: med.dosage.trim(),
+          frequency: Array.isArray(med.frequency) ? med.frequency : [],
+          time: med.time || ''
+        }))
       
       const submitData = {
         ...formData,
@@ -57,9 +66,10 @@ export default function PatientManager() {
       setEditingPatient(null)
       resetForm()
       loadPatients()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving patient:', error)
-      alert('Error saving patient. Please try again.')
+      const errorMessage = error?.response?.data?.detail || error?.message || 'Unknown error occurred'
+      alert(`Error saving patient: ${errorMessage}`)
     }
   }
 
@@ -73,7 +83,7 @@ export default function PatientManager() {
       risk_category: 'low',
     })
     setRiskFactorsInput('')
-    setMedicationInputs([{ name: '', dosage: '', frequency: '' }])
+    setMedicationInputs([{ name: '', dosage: '', frequency: [], time: '' }])
   }
 
   const handleEdit = (patient: Patient) => {
@@ -88,11 +98,17 @@ export default function PatientManager() {
     })
     setRiskFactorsInput(patient.risk_factors.join(', '))
     
-    // Set medication inputs
+    // Set medication inputs - handle old format (string frequency) and new format (array)
     if (patient.medications && patient.medications.length > 0) {
-      setMedicationInputs(patient.medications)
+      const convertedMeds = patient.medications.map((med: any) => ({
+        name: med.name || '',
+        dosage: med.dosage || '',
+        frequency: Array.isArray(med.frequency) ? med.frequency : (med.frequency ? [med.frequency] : []),
+        time: med.time || ''
+      }))
+      setMedicationInputs(convertedMeds)
     } else {
-      setMedicationInputs([{ name: '', dosage: '', frequency: '' }])
+      setMedicationInputs([{ name: '', dosage: '', frequency: [], time: '' }])
     }
     
     setShowModal(true)
@@ -126,16 +142,27 @@ export default function PatientManager() {
   }
 
   const addMedication = () => {
-    setMedicationInputs([...medicationInputs, { name: '', dosage: '', frequency: '' }])
+    setMedicationInputs([...medicationInputs, { name: '', dosage: '', frequency: [], time: '' }])
   }
 
   const removeMedication = (index: number) => {
     setMedicationInputs(medicationInputs.filter((_, i) => i !== index))
   }
 
-  const updateMedication = (index: number, field: keyof Medication, value: string) => {
+  const updateMedication = (index: number, field: keyof Medication, value: string | string[]) => {
     const updated = [...medicationInputs]
     updated[index] = { ...updated[index], [field]: value }
+    setMedicationInputs(updated)
+  }
+
+  const toggleMedicationDay = (index: number, day: string) => {
+    const updated = [...medicationInputs]
+    const currentDays = updated[index].frequency || []
+    if (currentDays.includes(day)) {
+      updated[index].frequency = currentDays.filter(d => d !== day)
+    } else {
+      updated[index].frequency = [...currentDays, day]
+    }
     setMedicationInputs(updated)
   }
 
@@ -213,13 +240,19 @@ export default function PatientManager() {
                 <td className="px-6 py-4 text-sm text-gray-500">
                   {patient.medications && patient.medications.length > 0 ? (
                     <div>
-                      {patient.medications.map((med, idx) => (
-                        <div key={idx} className="mb-1">
-                          {med.name}
-                          {med.dosage && ` - ${med.dosage}`}
-                          {med.frequency && ` (${med.frequency})`}
-                        </div>
-                      ))}
+                      {patient.medications.map((med, idx) => {
+                        const frequency = Array.isArray(med.frequency) 
+                          ? med.frequency.join(', ') 
+                          : (med.frequency || '')
+                        return (
+                          <div key={idx} className="mb-1 text-xs">
+                            <div className="font-medium">{med.name}</div>
+                            {med.dosage && <div className="text-gray-600">Dosage: {med.dosage}</div>}
+                            {frequency && <div className="text-gray-600">Days: {frequency}</div>}
+                            {med.time && <div className="text-gray-600">Time: {med.time}</div>}
+                          </div>
+                        )
+                      })}
                     </div>
                   ) : (
                     <span className="text-gray-400">None</span>
@@ -334,8 +367,8 @@ export default function PatientManager() {
                   Medications
                 </label>
                 {medicationInputs.map((med, index) => (
-                  <div key={index} className="mb-3 p-3 border border-gray-200 rounded-md">
-                    <div className="flex justify-between items-center mb-2">
+                  <div key={index} className="mb-4 p-4 border border-gray-200 rounded-md bg-gray-50">
+                    <div className="flex justify-between items-center mb-3">
                       <span className="text-sm font-medium text-gray-700">Medication {index + 1}</span>
                       {medicationInputs.length > 1 && (
                         <button
@@ -347,33 +380,56 @@ export default function PatientManager() {
                         </button>
                       )}
                     </div>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                       <div>
+                        <label className="block text-xs text-gray-600 mb-1">Medication Name</label>
                         <input
                           type="text"
-                          placeholder="Medication name"
+                          placeholder="e.g., Folic Acid"
                           value={med.name}
                           onChange={(e) => updateMedication(index, 'name', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                       </div>
                       <div>
+                        <label className="block text-xs text-gray-600 mb-1">Dosage</label>
                         <input
                           type="text"
-                          placeholder="Dosage (e.g., 400mg)"
+                          placeholder="e.g., 400mg"
                           value={med.dosage}
                           onChange={(e) => updateMedication(index, 'dosage', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                       </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 mb-3">
                       <div>
+                        <label className="block text-xs text-gray-600 mb-1">Time</label>
                         <input
-                          type="text"
-                          placeholder="Frequency (e.g., daily)"
-                          value={med.frequency}
-                          onChange={(e) => updateMedication(index, 'frequency', e.target.value)}
+                          type="time"
+                          value={med.time}
+                          onChange={(e) => updateMedication(index, 'time', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-600 mb-1">Days of Week</label>
+                        <div className="flex flex-wrap gap-2">
+                          {daysOfWeek.map((day) => (
+                            <label
+                              key={day}
+                              className="flex items-center cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={(med.frequency || []).includes(day)}
+                                onChange={() => toggleMedicationDay(index, day)}
+                                className="mr-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                              />
+                              <span className="text-xs text-gray-700">{day}</span>
+                            </label>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -381,7 +437,7 @@ export default function PatientManager() {
                 <button
                   type="button"
                   onClick={addMedication}
-                  className="text-sm text-primary-600 hover:text-primary-800"
+                  className="text-sm text-primary-600 hover:text-primary-800 font-medium"
                 >
                   + Add Medication
                 </button>
