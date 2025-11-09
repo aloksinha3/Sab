@@ -557,6 +557,7 @@ def convert_medications_to_strings(medications: List) -> List[str]:
 def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]:
     """Generate comprehensive IVR schedule for a patient"""
     schedule = []
+    call_logs_to_create = []  # Batch all call log creations
     current_time = datetime.now()
     gestational_age = patient.gestational_age_weeks
     weeks_remaining = max(0, 40 - gestational_age)
@@ -593,14 +594,14 @@ def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]
             "status": "scheduled"
         })
         
-        # Create call log
-        db.create_call_log(
-            patient_id=patient_id,
-            call_type="weekly_checkin",
-            status="scheduled",
-            message_text=message,
-            scheduled_time=call_time
-        )
+        # Add to batch for call log creation
+        call_logs_to_create.append({
+            "patient_id": patient_id,
+            "call_type": "weekly_checkin",
+            "status": "scheduled",
+            "message_text": message,
+            "scheduled_time": call_time
+        })
     
     # Generate medication reminders based on days and times
     if patient.medications:
@@ -662,13 +663,14 @@ def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]
                             "status": "scheduled"
                         })
                         
-                        db.create_call_log(
-                            patient_id=patient_id,
-                            call_type="medication_reminder",
-                            status="scheduled",
-                            message_text=message,
-                            scheduled_time=call_time
-                        )
+                        # Add to batch for call log creation
+                        call_logs_to_create.append({
+                            "patient_id": patient_id,
+                            "call_type": "medication_reminder",
+                            "status": "scheduled",
+                            "message_text": message,
+                            "scheduled_time": call_time
+                        })
     
     # High-risk monitoring calls
     if patient.risk_category == "high":
@@ -691,13 +693,23 @@ def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]
                 "status": "scheduled"
             })
             
-            db.create_call_log(
-                patient_id=patient_id,
-                call_type="high_risk_monitoring",
-                status="scheduled",
-                message_text=message,
-                scheduled_time=call_time
-            )
+            # Add to batch for call log creation
+            call_logs_to_create.append({
+                "patient_id": patient_id,
+                "call_type": "high_risk_monitoring",
+                "status": "scheduled",
+                "message_text": message,
+                "scheduled_time": call_time
+            })
+    
+    # Create all call logs in a single batch transaction
+    if call_logs_to_create:
+        try:
+            db.create_call_logs_batch(call_logs_to_create)
+        except Exception as e:
+            # If batch creation fails, log error but don't fail the entire operation
+            # The schedule will still be saved to the patient record
+            print(f"Warning: Failed to create some call logs: {e}")
     
     return schedule
 

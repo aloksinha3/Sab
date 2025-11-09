@@ -9,17 +9,23 @@ class Database:
         self.db_path = db_path
         self.init_db()
     
-    def get_connection(self):
-        conn = sqlite3.connect(self.db_path)
+    def get_connection(self, timeout: float = 20.0):
+        """Get a database connection with timeout and proper settings
+        
+        Args:
+            timeout: How long to wait for the database to unlock (in seconds)
+        """
+        conn = sqlite3.connect(self.db_path, timeout=timeout)
         conn.row_factory = sqlite3.Row
+        # Enable WAL mode for better concurrency (Write-Ahead Logging)
+        try:
+            conn.execute("PRAGMA journal_mode=WAL")
+        except:
+            pass  # If WAL mode is not supported, continue with default
         # Enable foreign key constraints (must be enabled for each connection)
         conn.execute("PRAGMA foreign_keys = ON")
-        # Verify it's enabled
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA foreign_keys")
-        fk_enabled = cursor.fetchone()[0]
-        if not fk_enabled:
-            print("Warning: Foreign keys could not be enabled")
+        # Set busy timeout
+        conn.execute(f"PRAGMA busy_timeout = {int(timeout * 1000)}")
         return conn
     
     def init_db(self):
@@ -101,22 +107,22 @@ class Database:
     def create_patient(self, name: str, phone: str, gestational_age_weeks: int,
                       risk_factors: List[str] = None, medications: List[Dict] = None,
                       risk_category: str = "low") -> int:
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        # Check if phone number already exists
-        cursor.execute("SELECT id, name FROM patients WHERE phone = ?", (phone,))
-        existing = cursor.fetchone()
-        
-        if existing:
-            conn.close()
-            raise ValueError(f"Phone number {phone} is already registered to patient: {existing[1]} (ID: {existing[0]})")
-        
-        risk_factors_str = json.dumps(risk_factors or [])
-        # Medications is now a list of dicts: [{"name": "...", "dosage": "...", "frequency": "..."}]
-        medications_str = json.dumps(medications or [])
-        
+        conn = None
         try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if phone number already exists
+            cursor.execute("SELECT id, name FROM patients WHERE phone = ?", (phone,))
+            existing = cursor.fetchone()
+            
+            if existing:
+                raise ValueError(f"Phone number {phone} is already registered to patient: {existing[1]} (ID: {existing[0]})")
+            
+            risk_factors_str = json.dumps(risk_factors or [])
+            # Medications is now a list of dicts: [{"name": "...", "dosage": "...", "frequency": "..."}]
+            medications_str = json.dumps(medications or [])
+            
             cursor.execute("""
                 INSERT INTO patients (name, phone, gestational_age_weeks, risk_factors, medications, risk_category)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -124,13 +130,19 @@ class Database:
             
             patient_id = cursor.lastrowid
             conn.commit()
-            conn.close()
             return patient_id
+        except ValueError:
+            # Re-raise ValueError as-is
+            raise
         except Exception as e:
-            conn.close()
+            if conn:
+                conn.rollback()
             if "UNIQUE constraint" in str(e) or "UNIQUE" in str(e):
                 raise ValueError(f"Phone number {phone} is already registered. Please use a different phone number.")
             raise
+        finally:
+            if conn:
+                conn.close()
     
     def get_patient(self, patient_id: int) -> Optional[Dict]:
         conn = self.get_connection()
@@ -155,35 +167,34 @@ class Database:
         return [dict(row) for row in rows]
     
     def update_patient(self, patient_id: int, **kwargs) -> bool:
-        conn = self.get_connection()
-        cursor = conn.cursor()
-        
-        # Check if phone is being updated and if it's a duplicate
-        if 'phone' in kwargs:
-            cursor.execute("SELECT id, name FROM patients WHERE phone = ? AND id != ?", 
-                          (kwargs['phone'], patient_id))
-            existing = cursor.fetchone()
-            if existing:
-                conn.close()
-                raise ValueError(f"Phone number {kwargs['phone']} is already registered to patient: {existing[1]} (ID: {existing[0]})")
-        
-        allowed_fields = ['name', 'phone', 'gestational_age_weeks', 'risk_factors', 
-                         'medications', 'risk_category', 'call_schedule']
-        updates = []
-        values = []
-        
-        for key, value in kwargs.items():
-            if key in allowed_fields:
-                if key in ['risk_factors', 'medications', 'call_schedule']:
-                    value = json.dumps(value) if value else None
-                updates.append(f"{key} = ?")
-                values.append(value)
-        
-        if not updates:
-            conn.close()
-            return False
-        
+        conn = None
         try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            # Check if phone is being updated and if it's a duplicate
+            if 'phone' in kwargs:
+                cursor.execute("SELECT id, name FROM patients WHERE phone = ? AND id != ?", 
+                              (kwargs['phone'], patient_id))
+                existing = cursor.fetchone()
+                if existing:
+                    raise ValueError(f"Phone number {kwargs['phone']} is already registered to patient: {existing[1]} (ID: {existing[0]})")
+            
+            allowed_fields = ['name', 'phone', 'gestational_age_weeks', 'risk_factors', 
+                             'medications', 'risk_category', 'call_schedule']
+            updates = []
+            values = []
+            
+            for key, value in kwargs.items():
+                if key in allowed_fields:
+                    if key in ['risk_factors', 'medications', 'call_schedule']:
+                        value = json.dumps(value) if value else None
+                    updates.append(f"{key} = ?")
+                    values.append(value)
+            
+            if not updates:
+                return False
+            
             values.append(patient_id)
             cursor.execute(f"""
                 UPDATE patients 
@@ -192,13 +203,19 @@ class Database:
             """, values)
             
             conn.commit()
-            conn.close()
             return True
+        except ValueError:
+            # Re-raise ValueError as-is
+            raise
         except Exception as e:
-            conn.close()
+            if conn:
+                conn.rollback()
             if "UNIQUE constraint" in str(e) or "UNIQUE" in str(e):
                 raise ValueError(f"Phone number is already registered. Please use a different phone number.")
             raise
+        finally:
+            if conn:
+                conn.close()
     
     def create_message(self, patient_id: int, message_audio: str = None, 
                       transcript: str = None, status: str = "pending") -> int:
@@ -259,18 +276,73 @@ class Database:
         return [dict(row) for row in rows]
     
     def create_call_log(self, patient_id: int, call_type: str, status: str,
-                       message_text: str = None, scheduled_time: datetime = None):
-        conn = self.get_connection()
-        cursor = conn.cursor()
+                       message_text: str = None, scheduled_time: datetime = None,
+                       completed_at: datetime = None) -> int:
+        """Create a single call log entry (legacy method - use create_call_logs_batch for multiple)"""
+        conn = None
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT INTO call_logs (patient_id, call_type, status, message_text, scheduled_time, completed_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (patient_id, call_type, status, message_text, 
+                  scheduled_time.isoformat() if scheduled_time else None,
+                  completed_at.isoformat() if completed_at else None))
+            
+            call_log_id = cursor.lastrowid
+            conn.commit()
+            return call_log_id
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise
+        finally:
+            if conn:
+                conn.close()
+    
+    def create_call_logs_batch(self, call_logs: List[Dict]) -> List[int]:
+        """Create multiple call log entries in a single transaction
         
-        cursor.execute("""
-            INSERT INTO call_logs (patient_id, call_type, status, message_text, scheduled_time)
-            VALUES (?, ?, ?, ?, ?)
-        """, (patient_id, call_type, status, message_text, 
-              scheduled_time.isoformat() if scheduled_time else None))
-        
-        conn.commit()
-        conn.close()
+        Args:
+            call_logs: List of dicts with keys: patient_id, call_type, status, message_text, scheduled_time, completed_at
+            
+        Returns:
+            List of created call log IDs
+        """
+        conn = None
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+            call_log_ids = []
+            
+            for log in call_logs:
+                scheduled_time = log.get('scheduled_time')
+                completed_at = log.get('completed_at')
+                
+                cursor.execute("""
+                    INSERT INTO call_logs (patient_id, call_type, status, message_text, scheduled_time, completed_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    log['patient_id'],
+                    log['call_type'],
+                    log['status'],
+                    log.get('message_text'),
+                    scheduled_time.isoformat() if scheduled_time and hasattr(scheduled_time, 'isoformat') else (scheduled_time if scheduled_time else None),
+                    completed_at.isoformat() if completed_at and hasattr(completed_at, 'isoformat') else (completed_at if completed_at else None)
+                ))
+                call_log_ids.append(cursor.lastrowid)
+            
+            conn.commit()
+            return call_log_ids
+        except Exception as e:
+            if conn:
+                conn.rollback()
+            raise
+        finally:
+            if conn:
+                conn.close()
     
     def get_upcoming_calls(self, limit: int = 10, patient_id: int = None) -> List[Dict]:
         """Get upcoming calls, limited to most recent 10

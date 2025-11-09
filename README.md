@@ -1,4 +1,4 @@
-# SabCare - Pregnancy IVR System For Developing Health Care Systems
+# Mada - Pregnancy Interactive Voice Response For Developing Health Care Systems
 
 Revolutionizing maternal healthcare through intelligent automation and personalized AI-driven communication
 
