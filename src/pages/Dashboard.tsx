@@ -83,31 +83,6 @@ export default function Dashboard() {
           )
         })}
       </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a
-            href="/patients"
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-center"
-          >
-            Add New Patient
-          </a>
-          <a
-            href="/calls"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-center"
-          >
-            View Call Queue
-          </a>
-          <a
-            href="/analytics"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-center"
-          >
-            View Analytics
-          </a>
-        </div>
-      </div>
     </div>
   )
 }

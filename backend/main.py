@@ -671,37 +671,51 @@ def generate_ivr_schedule(patient_id: int, patient: PatientCreate) -> List[Dict]
                 hour, minute = 9, 0
             
             # Generate calls for the next 20 weeks
+            # For each day in the frequency, calculate the next occurrence for each week
+            day_of_week_map = {}  # Map each day to its occurrences
+            
+            for day_name in med_days:
+                if day_name not in day_map:
+                    continue
+                
+                day_of_week = day_map[day_name]
+                current_day = current_time.weekday()
+                days_ahead = day_of_week - current_day
+                
+                # Calculate the base occurrence (first time this day occurs)
+                if days_ahead == 0:
+                    # Today is the target day
+                    call_time_today = current_time.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    if call_time_today > current_time:
+                        # Time hasn't passed today, first occurrence is today
+                        base_days_ahead = 0
+                    else:
+                        # Time has passed today, first occurrence is next week
+                        base_days_ahead = 7
+                elif days_ahead < 0:
+                    # Target day already happened this week, first occurrence is next week
+                    base_days_ahead = 7 + days_ahead
+                else:
+                    # Target day is later this week
+                    base_days_ahead = days_ahead
+                
+                # Store the base days ahead for this day
+                if day_name not in day_of_week_map:
+                    day_of_week_map[day_name] = base_days_ahead
+            
+            # Now generate calls for each week and each day
             for week in range(min(weeks_remaining, 20)):
                 for day_name in med_days:
-                    if day_name not in day_map:
+                    if day_name not in day_map or day_name not in day_of_week_map:
                         continue
                     
-                    # Calculate the next occurrence of this day
-                    day_of_week = day_map[day_name]
-                    current_day = current_time.weekday()
-                    days_ahead = day_of_week - current_day
+                    # Calculate days ahead for this specific week
+                    base_days_ahead = day_of_week_map[day_name]
+                    days_ahead = base_days_ahead + (week * 7)
                     
-                    # If today is the target day and time hasn't passed, schedule for today
-                    if days_ahead == 0:
-                        call_time_today = current_time.replace(hour=hour, minute=minute, second=0, microsecond=0)
-                        if call_time_today > current_time:
-                            # Schedule for today
-                            call_time = call_time_today
-                        else:
-                            # Time has passed today, schedule for next week
-                            days_ahead = 7 + (week * 7)
-                            call_date = current_time + timedelta(days=days_ahead)
-                            call_time = call_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
-                    elif days_ahead < 0:
-                        # Target day already happened this week, schedule for next occurrence
-                        days_ahead = 7 + days_ahead + (week * 7)
-                        call_date = current_time + timedelta(days=days_ahead)
-                        call_time = call_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
-                    else:
-                        # Target day is later this week or in future weeks
-                        days_ahead = days_ahead + (week * 7)
-                        call_date = current_time + timedelta(days=days_ahead)
-                        call_time = call_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
+                    # Calculate the call time
+                    call_date = current_time + timedelta(days=days_ahead)
+                    call_time = call_date.replace(hour=hour, minute=minute, second=0, microsecond=0)
                     
                     # Only schedule if it's in the future
                     if call_time > current_time:

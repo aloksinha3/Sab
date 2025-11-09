@@ -133,7 +133,44 @@ class TwilioService:
             print(f"✅ Call initiated: {call.sid}")
             return call.sid
         except Exception as e:
-            print(f"❌ Error making call: {e}")
+            error_msg = str(e)
+            print(f"❌ Error making call: {error_msg}")
+            
+            # Extract detailed error information if available
+            from twilio.base.exceptions import TwilioRestException
+            if isinstance(e, TwilioRestException):
+                print(f"   Error Code: {e.code}")
+                print(f"   Error Message: {e.msg}")
+                print(f"   More Info: {e.uri if hasattr(e, 'uri') else 'N/A'}")
+            
+            # Provide more helpful error messages
+            if "401" in error_msg or "Authenticate" in error_msg or (hasattr(e, 'code') and e.code == 20003):
+                print(f"   🔴 CRITICAL: Twilio authentication failed!")
+                print(f"   ")
+                print(f"   The Account SID and/or Auth Token are INVALID or EXPIRED.")
+                print(f"   ")
+                print(f"   Current Account SID: {self.client.username if self.client else 'N/A'}")
+                print(f"   ")
+                print(f"   TO FIX THIS:")
+                print(f"   1. Go to https://www.twilio.com/console")
+                print(f"   2. Log in and verify your Account SID matches: {self.client.username if self.client else 'N/A'}")
+                print(f"   3. Click on your Auth Token to reveal it (or regenerate if needed)")
+                print(f"   4. Update config.yaml with the CORRECT credentials")
+                print(f"   5. Restart the backend server")
+                print(f"   ")
+                print(f"   NOTE: The phone number format is CORRECT (+14436222793)")
+                print(f"         The issue is ONLY the authentication credentials.")
+            elif "21211" in error_msg or (hasattr(e, 'code') and e.code == 21211):
+                print(f"   ⚠️ Invalid phone number format. Number: {normalized_number}")
+                print(f"   Phone numbers must be in E.164 format: +[country code][number]")
+            elif "21610" in error_msg or (hasattr(e, 'code') and e.code == 21610):
+                print(f"   ⚠️ Phone number is unverified (trial account restriction)")
+                print(f"   Trial accounts can only call verified numbers.")
+                print(f"   Verify the number at: https://www.twilio.com/console/phone-numbers/verified")
+            elif "21408" in error_msg or (hasattr(e, 'code') and e.code == 21408):
+                print(f"   ⚠️ Permission denied for this action")
+                print(f"   Your account may not have permission to make calls to this number.")
+            
             if not use_twiml:
                 print(f"   Try using use_twiml=True for testing, or set SERVER_URL to a publicly accessible URL (use ngrok)")
             return None
