@@ -4,6 +4,7 @@ from typing import Dict, Optional
 from twilio.rest import Client
 from twilio.twiml.voice_response import VoiceResponse
 from database import Database
+from elevenlabs_service import ElevenLabsService
 
 class TwilioService:
     def __init__(self, config_path: str = "config.yaml"):
@@ -38,6 +39,10 @@ class TwilioService:
             print("   Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_FROM_NUMBER")
             print("   or configure them in config.yaml")
             self.client = None
+        
+        # Initialize ElevenLabs service
+        self.elevenlabs_service = ElevenLabsService(config_path)
+        self.elevenlabs_enabled = self.elevenlabs_service.enabled
     
     def _load_config(self, config_path: str) -> dict:
         if os.path.exists(config_path):
@@ -70,7 +75,7 @@ class TwilioService:
         else:
             return f"+1{digits}" if digits else phone
     
-    def make_call(self, to_number: str, message_text: str, patient_id: int = None, use_twiml: bool = False) -> Optional[str]:
+    def make_call(self, to_number: str, message_text: str = "", patient_id: int = None, use_twiml: bool = False) -> Optional[str]:
         """Make a phone call using Twilio
         
         Args:
@@ -99,6 +104,19 @@ class TwilioService:
         # Normalize phone number to E.164 format
         normalized_number = self._normalize_phone_number(to_number)
         print(f"📞 Making call to {normalized_number} (original: {to_number}) from {self.from_number}")
+        
+        # If ElevenLabs is enabled, use it for outbound calls
+        if self.elevenlabs_enabled and self.elevenlabs_service.client:
+            print(f"   Using ElevenLabs AI agent for outbound call")
+            # Pass the message_text as the initial prompt for the agent
+            call_sid = self.elevenlabs_service.make_outbound_call(
+                normalized_number, 
+                patient_id, 
+                initial_message=message_text if message_text else None
+            )
+            if call_sid:
+                return call_sid
+            # If ElevenLabs fails, fall through to Twilio
         
         try:
             if use_twiml:
@@ -176,23 +194,25 @@ class TwilioService:
             return None
     
     def handle_inbound_call(self, request: Dict) -> str:
-        """Handle inbound Twilio call and generate TwiML response
+        """Handle inbound Twilio call and connect to ElevenLabs voice agent
         
-        Simplified version: Only delivers the message and hangs up.
-        No user interaction or message recording.
+        If ElevenLabs is enabled, connects the call to the AI voice agent with
+        the template message as the initial prompt. Otherwise, falls back to basic TwiML.
         """
-        response = VoiceResponse()
-        
         # Get caller's phone number
         caller_number = request.get("From", "")
         
-        # Find patient by phone number
+        # Find patient by phone number and get their message
         patients = self.db.get_all_patients()
         patient = next((p for p in patients if p.get("phone") == caller_number), None)
         
+        # Get the template message for this patient
+        template_message = None
         if patient:
-            # Get the next scheduled call message for this patient
+            # Try to get the next scheduled call message
             import json
+            from datetime import datetime
+            
             call_schedule_str = patient.get("call_schedule") or "[]"
             try:
                 call_schedule = json.loads(call_schedule_str) if isinstance(call_schedule_str, str) else call_schedule_str
@@ -200,27 +220,34 @@ class TwilioService:
                 call_schedule = []
             
             if call_schedule:
-                # Get the next scheduled message
-                from datetime import datetime
+                # Get the next upcoming call message
                 now = datetime.now()
                 upcoming_calls = [
                     c for c in call_schedule
-                    if isinstance(c, dict) and c.get("scheduled_time") and datetime.fromisoformat(c["scheduled_time"]) > now
+                    if isinstance(c, dict) and c.get("scheduled_time")
+                    and datetime.fromisoformat(c["scheduled_time"]) > now
                 ]
                 
                 if upcoming_calls:
-                    next_call = upcoming_calls[0]
-                    message_text = next_call.get("message_text", "Hello, this is SabCare.")
-                else:
-                    message_text = f"Hello {patient.get('name', 'Patient')}, this is SabCare. Thank you for your call."
-            else:
-                message_text = f"Hello {patient.get('name', 'Patient')}, this is SabCare. Thank you for your call."
+                    # Get the most recent/next call
+                    next_call = sorted(upcoming_calls, key=lambda x: x.get("scheduled_time", ""))[0]
+                    template_message = next_call.get("message_text", "")
+            
+            # If no scheduled message, create a default one
+            if not template_message:
+                template_message = f"Hello {patient.get('name', 'Patient')}, this is SabCare. Thank you for your call."
         else:
-            message_text = "Hello, this is SabCare. Thank you for calling."
+            template_message = "Hello, this is SabCare. Thank you for calling."
         
-        # Say the message and hang up (no user interaction)
-        response.say(message_text, voice="alice", language="en-US")
-        response.say("Thank you for calling SabCare. Goodbye.", voice="alice")
+        # If ElevenLabs is enabled, connect call to voice agent with template message
+        if self.elevenlabs_enabled and self.elevenlabs_service.client:
+            print(f"📞 Inbound call from {caller_number} - connecting to ElevenLabs agent")
+            print(f"📝 Template message: {template_message[:100]}...")
+            return self.elevenlabs_service.get_inbound_call_twiml(caller_number, template_message)
+        
+        # Fallback to basic TwiML if ElevenLabs not available
+        response = VoiceResponse()
+        response.say(template_message, voice="alice", language="en-US")
         response.hangup()
         
         return str(response)

@@ -24,5 +24,10 @@ echo ""
 echo "Press Ctrl+C to stop the server"
 echo ""
 
+# Activate virtual environment if it exists
+if [ -d "venv" ]; then
+    source venv/bin/activate
+fi
+
 python -c "import sys; sys.path.append('.'); from main import app; import uvicorn; uvicorn.run(app, host='0.0.0.0', port=8000)"
 

@@ -15,6 +15,9 @@ sqlalchemy>=2.0.23
 # Twilio
 twilio>=8.10.0
 
+# ElevenLabs
+elevenlabs>=1.0.0
+
 # Scheduling
 apscheduler>=3.11.0
 
