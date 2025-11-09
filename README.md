@@ -10,7 +10,7 @@ We built a voice-first follow-up system designed to reach any patient with a pho
 ### Prerequisites
 - Python 3.8+ with pip
 - Node.js 16+ with npm
-- config.yaml file containing Twilio and ElevenLabs API keys
+- config.yaml file containing unique Twilio and ElevenLabs API keys
 - Git for version control
 
 ### Quick Start (One Command)
