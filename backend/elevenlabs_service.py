@@ -84,11 +84,24 @@ class ElevenLabsService:
             # If we have an initial message, pass it as conversation_initiation_client_data
             # This allows the agent to start with the template message
             if initial_message:
-                # conversation_initiation_client_data is a dict that can contain initial context
-                call_params["conversation_initiation_client_data"] = {
-                    "initial_message": initial_message,
-                    "context": initial_message
-                }
+                try:
+                    # Try to use the proper type if available
+                    from elevenlabs.types.conversation_initiation_client_data_request_input import ConversationInitiationClientDataRequestInput
+                    # Try creating with initial_message field
+                    try:
+                        call_params["conversation_initiation_client_data"] = ConversationInitiationClientDataRequestInput(
+                            initial_message=initial_message
+                        )
+                    except:
+                        # If that doesn't work, try as dict (Pydantic models often accept dicts)
+                        call_params["conversation_initiation_client_data"] = {
+                            "initial_message": initial_message
+                        }
+                except ImportError:
+                    # Fallback to dict if type not available
+                    call_params["conversation_initiation_client_data"] = {
+                        "initial_message": initial_message
+                    }
             
             response = self.client.conversational_ai.twilio.outbound_call(**call_params)
             
