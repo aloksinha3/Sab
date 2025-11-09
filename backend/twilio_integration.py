@@ -175,21 +175,11 @@ class TwilioService:
                 response.say(reminder_message, voice="alice", language="en-US")
                 
                 # Then redirect to ElevenLabs agent for the conversation
-                # Pass the full message_text as the initial prompt for the agent
                 webhook_url = (
                     f"https://api.elevenlabs.io/v1/convai/twilio/inbound-call"
                     f"?agent_id={self.elevenlabs_service.agent_id}"
                     f"&phone_number_id={self.elevenlabs_service.phone_number_id}"
                 )
-                
-                # Add message preview as context for the agent
-                if message_text:
-                    # Clean the message text (remove "Press 1" instructions if present)
-                    clean_message = message_text.split("\n\nPress 1")[0].strip()
-                    encoded_message = urllib.parse.quote(clean_message)
-                    webhook_url += f"&context={encoded_message}"
-                    webhook_url += f"&initial_message={encoded_message}"
-                    print(f"📝 Passing message preview to ElevenLabs: {clean_message[:100]}...")
                 
                 print(f"🔄 Redirecting to ElevenLabs agent...")
                 response.redirect(url=webhook_url, method="POST")
