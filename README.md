@@ -13,7 +13,7 @@
 ```bash
 # Clone the repository
 git clone https://github.com/aloksinha3/SabCare.git
-cd SabCare
+cd Mada
 
 # Run the complete setup
 ./start.sh
@@ -52,7 +52,5 @@ This project is licensed under the MIT License.
 
 ---
 
-**SabCare** - Empowering pregnancy care through intelligent automation 🤖👶
-
-Built with ❤️ for maternal healthcare innovation
+Built with ❤️ for mothers around the world
 
