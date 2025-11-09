@@ -6,7 +6,7 @@
 ### Prerequisites
 - Python 3.8+ with pip
 - Node.js 16+ with npm
-- Twilio Account (for voice calls)
+- config.yaml file containing Twilio and ElevenLabs API keys
 - Git for version control
 
 ### Quick Start (One Command)
