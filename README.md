@@ -1,4 +1,4 @@
-# Mada
+# Sab
 Pregnancy IVR With AI Voice Features For Developing Health Care Systems
 
 Across low-resource settings, patients—especially expectant mothers—receive only brief clinic interactions before returning home with limited support and high risk of complications. This post-clinic gap affects billions: 4.5 billion lack essential services, 1.3 billion face financial hardship due to care costs, and primary-care visits can be as short as 48 seconds, leaving little time to ensure understanding of critical medications. Half of patients worldwide fail to take medicines as prescribed, contributing to avoidable deaths and preventable neonatal and maternal mortality. Digital health tools have struggled to reach the most vulnerable due to lack of internet access, literacy barriers, and limited smartphone penetration. Yet evidence from interventions and recent clinical trials shows that voice-based outreach can sustainably improve adherence, detect danger signs, and save lives at national scale. With an 11-million-worker shortage projected by 2030 and poor follow-up driving preventable harms, the greatest risks begin after discharge—when patients are alone, unsupported, and disconnected from care.
@@ -17,7 +17,7 @@ We built a voice-first follow-up system designed to reach any patient with a pho
 ```bash
 # Clone the repository
 git clone https://github.com/aloksinha3/SabCare.git
-cd Mada
+cd Sab
 
 # Run the complete setup
 ./start.sh
